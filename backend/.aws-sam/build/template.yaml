@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: backend
+Transform:
+- AWS::Serverless-2016-10-31
+Resources:
+  QldbLedger:
+    Type: AWS::QLDB::Ledger
+    Properties:
+      Name: qldb-bicycle-licence-sam
+      DeletionProtection: false
+      PermissionsMode: ALLOW_ALL
+      Tags:
+      - Key: name
+        Value: qldb-bicycle-licence-sam
+  CreateLicence:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/functions/create-licence-sam.handler
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          LEDGER_NAME:
+            Ref: QldbLedger
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - qldb:SendCommand
+          Resource:
+            Fn::Sub: arn:aws:qldb:${AWS::Region}:${AWS::AccountId}:ledger/${QldbLedger}
+      Tracing: Active
+      Events:
+        HttpPost:
+          Type: Api
+          Properties:
+            Path: /licences
+            Method: post
+      CodeUri: CreateLicence
+Outputs:
+  qldbBicycleLicenceLedger:
+    Value:
+      Ref: QldbLedger
+    Export:
+      Name: qldb-bicycle-licence-sam
