@@ -1,5 +1,7 @@
 node_modules
 
+# Build generated folder
+.aws-sam
 .aws-sam/*
 
 # Build folder

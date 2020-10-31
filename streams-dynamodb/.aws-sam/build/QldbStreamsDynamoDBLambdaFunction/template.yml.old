@@ -1,0 +1,120 @@
+# This is the SAM template that represents the architecture of your serverless application
+# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-template-basics.html
+
+# The AWSTemplateFormatVersion identifies the capabilities of the template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/format-version-structure.html
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  streams-dynamodb
+
+# Transform section specifies one or more macros that AWS CloudFormation uses to process your template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
+Transform:
+- AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Tracing: Active
+    Environment:
+      Variables:
+        AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+        TABLE_NAME: BicycleLicenceTable
+    
+
+# Resources declares the AWS resources that you want to include in the stack
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
+Resources:
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  QldbStreamsDynamoDBLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: src/functions/qldb-streams-dynamodb-sam.handler
+      Runtime: nodejs12.x
+      Events:
+        Stream:
+          Type: Kinesis
+          Properties:
+            Stream: !GetAtt LicenceStreamKinesis.Arn
+            StartingPosition: TRIM_HORIZON
+            MaximumRetryAttempts: 10
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: 2012-10-17 
+          Statement: 
+            - Effect: Allow 
+              Action:
+                - kinesis:ListStreams 
+                - kinesis:DescribeStream 
+                - kinesis:GetRecords 
+                - kinesis:GetShardIterator
+                - kinesis:PutRecord
+              Resource: !GetAtt LicenceStreamKinesis.Arn 
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+              Resource: !GetAtt BicycleLicenceTable.Arn
+
+  BicycleLicenceTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    Properties:
+      TableName: qldb-bicycle-licence-sam
+      AttributeDefinitions:
+        - AttributeName: "pk"
+          AttributeType: S
+      KeySchema:
+        - AttributeName: "pk"
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  LicenceStreamKinesis:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      Name: LicenceStreamKinesis
+      RetentionPeriodHours: 168
+      ShardCount: 1
+
+  LicenceStreamsKinesisRole: # Used by QLDB to write to Kinesis Streams
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: LicenceStreamsKinesisRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: qldb.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: QLDBStreamDynamoDBKinesisPermissions
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kinesis:ListShards
+                  - kinesis:DescribeStream
+                  - kinesis:PutRecord*
+                Resource: !GetAtt LicenceStreamKinesis.Arn
+
+  LicenceQLDBStream:
+    Type: "AWS::QLDB::Stream"
+    DependsOn: LicenceStreamsKinesisRole
+    Properties:
+      InclusiveStartTime: "2020-05-29T00:00:00Z"
+      KinesisConfiguration:
+        AggregationEnabled: true
+        StreamArn: !GetAtt LicenceStreamKinesis.Arn
+      LedgerName: !ImportValue qldb-bicycle-licence-sam
+      RoleArn: !GetAtt LicenceStreamsKinesisRole.Arn
+      StreamName: qldb-licence-dynamodb-sam
+      Tags:
+        - Key: name
+          Value: qldb-bicycle-licence-sam

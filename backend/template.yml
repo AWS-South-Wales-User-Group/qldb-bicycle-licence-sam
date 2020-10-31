@@ -12,6 +12,19 @@ Description: >-
 Transform:
 - AWS::Serverless-2016-10-31
 
+
+Globals:
+  Api:
+    TracingEnabled: true
+  Function:
+    Tracing: Active
+    Timeout: 180
+    Environment:
+      Variables:
+        LEDGER_NAME: !Ref QldbLedger
+        AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+
+
 # Resources declares the AWS resources that you want to include in the stack
 # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
 Resources:
@@ -41,12 +54,12 @@ Resources:
           LICENCE_TABLE_NAME: BicycleLicence
       Policies:
         - AWSLambdaBasicExecutionRole
-        - Version: "2012-10-17"
+        - Version: 2012-10-17
           Statement:
             - Effect: Allow 
               Action:
                 - qldb:SendCommand
-              Resource: !Sub "arn:aws:qldb:${AWS::Region}:${AWS::AccountId}:ledger/${QldbLedger}"
+              Resource: !Sub arn:aws:qldb:${AWS::Region}:${AWS::AccountId}:ledger/${QldbLedger}
 
   QldbTable:
     Type: Custom::CreateQldbTable
@@ -69,12 +82,12 @@ Resources:
           INDEX_NAME_3: Telephone
       Policies:
         - AWSLambdaBasicExecutionRole
-        - Version: "2012-10-17"
+        - Version: 2012-10-17
           Statement:
             - Effect: Allow 
               Action:
                 - qldb:SendCommand
-              Resource: !Sub "arn:aws:qldb:${AWS::Region}:${AWS::AccountId}:ledger/${QldbLedger}"      
+              Resource: !Sub arn:aws:qldb:${AWS::Region}:${AWS::AccountId}:ledger/${QldbLedger}
 
   QldbIndex:
     Type: Custom::qldbIndexes
@@ -93,19 +106,40 @@ Resources:
           LEDGER_NAME: !Ref QldbLedger
       Policies:
         - AWSLambdaBasicExecutionRole
-        - Version: "2012-10-17"
+        - Version: 2012-10-17
           Statement:
             - Effect: Allow 
               Action:
                 - qldb:SendCommand
-              Resource: !Sub "arn:aws:qldb:${AWS::Region}:${AWS::AccountId}:ledger/${QldbLedger}"
-      Tracing: Active
+              Resource: !Sub arn:aws:qldb:${AWS::Region}:${AWS::AccountId}:ledger/${QldbLedger}
       Events:
         HttpPost:
           Type: Api
           Properties:
             Path: '/licences'
             Method: post
+
+
+  GetLicence:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/functions/get-licence-sam.handler
+      Runtime: nodejs12.x
+      MemorySize: 512
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow 
+              Action:
+                - qldb:SendCommand
+              Resource: !Sub arn:aws:qldb:${AWS::Region}:${AWS::AccountId}:ledger/${QldbLedger}
+      Events:
+        HttpPost:
+          Type: Api
+          Properties:
+            Path: '/licences/{licenceid}'
+            Method: get
 
 Outputs:
   qldbBicycleLicenceLedger:
