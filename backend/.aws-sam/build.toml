@@ -4,4 +4,4 @@
 [build_definitions.a1a3d1fd-04c3-4174-8076-0f446dfbcef0]
 codeuri = "."
 runtime = "nodejs12.x"
-functions = ["CreateLicence"]
+functions = ["CreateQldbTable", "CreateQldbIndex", "CreateLicence"]

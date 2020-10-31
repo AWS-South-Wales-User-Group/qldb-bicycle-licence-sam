@@ -53,8 +53,35 @@ Resources:
     DependsOn: QldbLedger
     Properties:
       ServiceToken: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${CreateQldbTable}
-      Version: 1.0  #change this to force redeploy
-          
+      Version: 1.0 
+    
+  CreateQldbIndex:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/functions/createQldbIndex.handler
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          LEDGER_NAME: !Ref QldbLedger
+          TABLE_NAME: BicycleLicence
+          INDEX_NAME_1: GUID
+          INDEX_NAME_2: Email
+          INDEX_NAME_3: Telephone
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow 
+              Action:
+                - qldb:SendCommand
+              Resource: !Sub "arn:aws:qldb:${AWS::Region}:${AWS::AccountId}:ledger/${QldbLedger}"      
+
+  QldbIndex:
+    Type: Custom::qldbIndexes
+    DependsOn: QldbTable
+    Properties:
+      ServiceToken: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${CreateQldbIndex}
+      Version: 1.0 
 
   CreateLicence:
     Type: AWS::Serverless::Function
