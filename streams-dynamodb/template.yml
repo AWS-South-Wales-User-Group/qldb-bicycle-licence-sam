@@ -34,13 +34,6 @@ Resources:
       Handler: src/functions/qldb-streams-dynamodb-sam.handler
       Runtime: nodejs12.x
       MemorySize: 1024
-      Events:
-        Stream:
-          Type: Kinesis
-          Properties:
-            Stream: !GetAtt LicenceStreamKinesis.Arn
-            StartingPosition: TRIM_HORIZON
-            MaximumRetryAttempts: 10
       Policies:
         - AWSLambdaBasicExecutionRole
         - Version: 2012-10-17 
@@ -62,6 +55,11 @@ Resources:
                 - dynamodb:UpdateItem
                 - dynamodb:DeleteItem
               Resource: !GetAtt BicycleLicenceTable.Arn
+            - Effect: "Allow"
+              Action:
+                - "sqs:SendMessage"
+              Resource:
+                Fn::GetAtt: [StreamsFailureQueue, Arn]
 
   BicycleLicenceTable:
     Type: AWS::DynamoDB::Table
@@ -96,7 +94,7 @@ Resources:
       Policies:
         - PolicyName: QLDBStreamDynamoDBKinesisPermissions
           PolicyDocument:
-            Version: 2012-10-17
+            Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
@@ -106,7 +104,7 @@ Resources:
                 Resource: !GetAtt LicenceStreamKinesis.Arn
 
   LicenceQLDBStream:
-    Type: "AWS::QLDB::Stream"
+    Type: AWS::QLDB::Stream
     DependsOn: LicenceStreamsKinesisRole
     Properties:
       InclusiveStartTime: "2020-05-29T00:00:00Z"
@@ -119,3 +117,32 @@ Resources:
       Tags:
         - Key: name
           Value: qldb-bicycle-licence-sam
+
+  StreamsFailureQueue:
+    Type: AWS::SQS::Queue
+
+  MyEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 50
+      BisectBatchOnFunctionError: true
+      DestinationConfig: 
+        OnFailure: 
+          Destination: !GetAtt StreamsFailureQueue.Arn
+      Enabled: true
+      EventSourceArn:
+        Fn::Join:
+          - ""
+          -
+            - "arn:aws:kinesis:"
+            -
+              Ref: "AWS::Region"
+            - ":"
+            -
+              Ref: "AWS::AccountId"
+            - ":stream/"
+            -
+              Ref: LicenceStreamKinesis
+      FunctionName: !GetAtt QldbStreamsDynamoDBLambdaFunction.Arn
+      MaximumRetryAttempts: 1
+      StartingPosition: "TRIM_HORIZON"
