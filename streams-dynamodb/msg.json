@@ -1,0 +1,20 @@
+{
+    "Records": [
+        {
+            "messageId": "32e3df23-d571-435a-b2bf-cb818fd305a0",
+            "receiptHandle": "AQEBQSdiiOpr5yuFtJN/JZC3toP691Bp0QJJQpW9vxNtjyKHxBtgSjxVUYGdfpNurK59bb8fGu2Blb6bQ+DjsGEA6cz4ClJ+3JI00Ach3I2ynS4Esjxm680cuNmlPPStVqcbgzLXhXlIP999molo3E6znUg7/yaFdXMuCps2PGYARTQ1buccguFg9Z0Uq9g1NjqJ0eamtMH0eWtWHRb71DdFP9GXh1PmVAPROTlH5ZkIXcbpiW3fYHm0hgRluVI8RKprAXuU45hTzBrjFelm8j3o5LzJGv77v+1YdVcmc7aqPvSsW8GFbPlZhV26wAFnFCNZj/rHr8OM+SoTyMoXv9n9exHaAf0Zd8eQBofQSrPcr4USKSw7VCHI0ccNVtnEHxiHOBYe/7jPVO6U9ThnAQ3o8qKu2RYxBHmsD9LYE+MJxB1syyQRIsHyLl1J5x1lg02Z",
+            "body": "{\"requestContext\":{\"requestId\":\"7912b44f-a15d-4a39-956e-16f4126c49b4\",\"functionArn\":\"arn:aws:lambda:eu-west-1:082136225280:function:streams-dynamodb-sam-QldbStreamsDynamoDBLambdaFunc-1I3VV3OMYF7\",\"condition\":\"RetryAttemptsExhausted\",\"approximateInvokeCount\":2},\"responseContext\":{\"statusCode\":200,\"executedVersion\":\"$LATEST\",\"functionError\":\"Unhandled\"},\"version\":\"1.0\",\"timestamp\":\"2020-11-21T22:02:21.144Z\",\"KinesisBatchInfo\":{\"shardId\":\"shardId-000000000000\",\"startSequenceNumber\":\"49612846633638285695198771602783108269174606893684883458\",\"endSequenceNumber\":\"49612846633638285695198771602783108269174606893684883458\",\"approximateArrivalOfFirstRecord\":\"2020-11-21T22:01:29.848Z\",\"approximateArrivalOfLastRecord\":\"2020-11-21T22:01:29.848Z\",\"batchSize\":1,\"streamArn\":\"arn:aws:kinesis:eu-west-1:082136225280:stream/LicenceStreamKinesis\"}}",
+            "attributes": {
+                "ApproximateReceiveCount": "1",
+                "SentTimestamp": "1605996141159",
+                "SenderId": "AROARGH5TKYAFOR7PMJQW:awslambda_872_20201121210445093",
+                "ApproximateFirstReceiveTimestamp": "1605996141162"
+            },
+            "messageAttributes": {},
+            "md5OfBody": "8b45d87317006c12ece5b951587e3edb",
+            "eventSource": "aws:sqs",
+            "eventSourceARN": "arn:aws:sqs:eu-west-1:082136225280:streams-dynamodb-sam-StreamsFailureQueue-83RBBPWH0JUU",
+            "awsRegion": "eu-west-1"
+        }
+    ]
+}

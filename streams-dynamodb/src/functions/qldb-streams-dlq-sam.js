@@ -5,25 +5,11 @@
 const Log = require('@dazn/lambda-powertools-logger');
 const deagg = require('aws-kinesis-agg');
 const ion = require('ion-js');
-const { deleteLicence, updateLicence } = require('./lib/dyanamodb-licence');
 
 const computeChecksums = true;
 const REVISION_DETAILS = "REVISION_DETAILS";
 
-/**
- * Promisified function to deaggregate Kinesis record
- * @param record An individual Kinesis record from the aggregated records
- * @returns The resolved Promise object containing the deaggregated records
- */
-const promiseDeaggregate = (record) => new Promise((resolve, reject) => {
-  deagg.deaggregateSync(record, computeChecksums, (err, responseObject) => {
-    if (err) {
-      // handle/report error
-      return reject(err);
-    }
-    return resolve(responseObject);
-  });
-});
+
 
 /**
  * Processes each Ion record, and takes the appropriate action to
@@ -70,10 +56,9 @@ async function processRecords(records) {
       // Only process records where the record type is REVISION_DETAILS
       if (ionRecord.recordType.stringValue() !== REVISION_DETAILS) {
         Log.debug(`Skipping record of type ${ion.dumpPrettyText(ionRecord.recordType)}`);
-        throw new Error("Testing out the DLQ");
       } else {
         Log.debug(`Ion Record: ${ion.dumpPrettyText(ionRecord.payload)}`);
-        await processIon(ionRecord);
+        throw new Error("Testing out the DLQ");
       }
     }),
   );
@@ -83,7 +68,6 @@ module.exports.handler = async (event, context) => {
   Log.debug(`In ${context.functionName} processing ${event.Records.length} Kinesis Input Records`);
   // eslint-disable-next-line no-console
   console.log(`** PRINT MSG: ${JSON.stringify(event, null, 2)}`);
-
   await Promise.all(
     event.Records.map(async (kinesisRecord) => {
       const records = await promiseDeaggregate(kinesisRecord.kinesis);
@@ -92,3 +76,5 @@ module.exports.handler = async (event, context) => {
   );
   Log.debug('Finished processing in qldb-stream handler');
 };
+
+
